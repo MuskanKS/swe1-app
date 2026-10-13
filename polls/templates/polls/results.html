@@ -1,0 +1,47 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results | Lavender Polls</title>
+    <link rel="stylesheet" href="{% static 'polls/style.css' %}">
+</head>
+<body>
+    <main class="container">
+        <header class="site-header">
+            <div class="brand">Lavender Polls</div>
+            <h1>Poll Results</h1>
+            <p class="subtitle">{{ question.question_text }}</p>
+        </header>
+
+        <section class="card">
+            {% for choice in question.choice_set.all %}
+                <div class="result-row">
+                    <div class="result-label">
+                        <strong>{{ choice.choice_text }}</strong>
+                        <span>
+                            {{ choice.votes }} vote{{ choice.votes|pluralize }}
+                        </span>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="empty-state">No choices have been added yet.</p>
+            {% endfor %}
+
+            <p class="subtitle">
+                Total votes: {{ total_votes }}
+            </p>
+        </section>
+
+        <a class="button"
+           href="{% url 'polls:detail' question.id %}">Vote again</a>
+
+        <a class="button button-secondary"
+           href="{% url 'polls:index' %}">All polls</a>
+
+        <footer class="footer">Thanks for taking part.</footer>
+    </main>
+</body>
+</html>

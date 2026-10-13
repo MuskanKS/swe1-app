@@ -1,0 +1,39 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polls | Lavender</title>
+    <link rel="stylesheet" href="{% static 'polls/style.css' %}">
+</head>
+<body>
+    <main class="container">
+        <header class="site-header">
+            <div class="brand">Lavender Polls</div>
+            <h1>Make your choice.</h1>
+            <p class="subtitle">A little space to share what you think.</p>
+        </header>
+
+        {% if latest_question_list %}
+            {% for question in latest_question_list %}
+                <section class="card">
+                    <a class="poll-link"
+                       href="{% url 'polls:detail' question.id %}">
+                        {{ question.question_text }} →
+                    </a>
+                    <p class="subtitle">Choose an answer and cast your vote.</p>
+                </section>
+            {% endfor %}
+        {% else %}
+        <section class="card empty-state">
+          <h2>No polls are available.</h2>
+          <p>Check back soon for a new question.</p>
+      </section>
+        {% endif %}
+
+        <footer class="footer">Thoughtfully made with Django.</footer>
+    </main>
+</body>
+</html>
