@@ -1,0 +1,24 @@
+language: python
+
+dist: jammy
+
+python:
+  - "3.11"
+
+install:
+  - pip install -r requirements.txt
+
+script:
+  - python manage.py check
+  - black --check .
+  - flake8 .
+  - coverage run --rcfile=.coveragerc manage.py test
+  - coverage report --rcfile=.coveragerc -m
+
+after_success:
+  - coveralls
+
+branches:
+  only:
+    - main
+    - assignment-6-travis-ci

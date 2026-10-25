@@ -5,3 +5,9 @@ db.sqlite3
 .DS_Store
 .env
 staticfiles/
+# Coverage reports
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.coveragerc.sqlite-backup

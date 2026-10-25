@@ -39,16 +39,12 @@ class QuestionIndexTests(TestCase):
     def test_future_question_is_not_displayed(self):
         create_question("Future question", 30)
         response = self.client.get(reverse("polls:index"))
-        self.assertQuerySetEqual(
-            response.context["latest_question_list"], []
-        )
+        self.assertQuerySetEqual(response.context["latest_question_list"], [])
 
     def test_past_question_is_displayed(self):
         question = create_question("Past question", -5)
         response = self.client.get(reverse("polls:index"))
-        self.assertQuerySetEqual(
-            response.context["latest_question_list"], [question]
-        )
+        self.assertQuerySetEqual(response.context["latest_question_list"], [question])
 
 
 class VotingTests(TestCase):
