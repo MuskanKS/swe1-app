@@ -14,9 +14,10 @@ aws elasticbeanstalk update-environment --environment-name swe1-env \
   --version-label "$EB_VERSION_LABEL" --query 'Status' --output text
 
 for attempt in $(seq 1 90); do
-  read -r status deployed health <<< "$(aws elasticbeanstalk describe-environments \
+  state=$(aws elasticbeanstalk describe-environments \
     --environment-names swe1-env \
-    --query 'Environments[0].[Status,VersionLabel,Health]' --output text)"
+    --query 'Environments[0].[Status,VersionLabel,Health]' --output text)
+  read -r status deployed health <<< "$state"
   printf 'Deployment: %s, version: %s, health: %s\n' "$status" "$deployed" "$health"
   if [[ "$status" = Ready ]]; then
     if [[ "$deployed" != "$EB_VERSION_LABEL" ]]; then
