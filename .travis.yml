@@ -23,21 +23,13 @@ before_deploy:
   - test -n "$AWS_SECRET_ACCESS_KEY"
   - pip install awscli
   - export AWS_DEFAULT_REGION=us-east-1
-  - export EB_VERSION_LABEL="travis-${TRAVIS_COMMIT}-${TRAVIS_BUILD_ID}-$(date +%s)"
+  - export EB_VERSION_LABEL="travis-${TRAVIS_COMMIT}-${TRAVIS_BUILD_ID}"
   - git archive --format=zip --output=/tmp/swe1-app.zip HEAD
 
 deploy:
-  provider: elasticbeanstalk
-  edge: true
-  access_key_id: "$AWS_ACCESS_KEY_ID"
-  secret_access_key: "$AWS_SECRET_ACCESS_KEY"
-  region: us-east-1
-  app: swe1-app
-  label: "$EB_VERSION_LABEL"
-  bucket: elasticbeanstalk-us-east-1-520519513900
-  bucket_path: travis-builds
-  zip_file: /tmp/swe1-app.zip
-  run: bash scripts/deploy-eb.sh
+  provider: script
+  script: bash scripts/deploy-eb.sh
+  skip_cleanup: true
   on:
     repo: MuskanKS/swe1-app
     branch: main
