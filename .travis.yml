@@ -21,6 +21,9 @@ after_success:
 before_deploy:
   - test -n "$AWS_ACCESS_KEY_ID"
   - test -n "$AWS_SECRET_ACCESS_KEY"
+  - pip install awscli
+  - export AWS_DEFAULT_REGION=us-east-1
+  - export EB_VERSION_LABEL="travis-${TRAVIS_COMMIT}-${TRAVIS_BUILD_ID}-$(date +%s)"
   - git archive --format=zip --output=/tmp/swe1-app.zip HEAD
 
 deploy:
@@ -30,12 +33,11 @@ deploy:
   secret_access_key: "$AWS_SECRET_ACCESS_KEY"
   region: us-east-1
   app: swe1-app
-  env: swe1-env
+  label: "$EB_VERSION_LABEL"
   bucket: elasticbeanstalk-us-east-1-520519513900
   bucket_path: travis-builds
   zip_file: /tmp/swe1-app.zip
-  wait_until_deployed: true
-  wait_until_deployed_timeout: 900
+  run: bash scripts/deploy-eb.sh
   on:
     repo: MuskanKS/swe1-app
     branch: main
