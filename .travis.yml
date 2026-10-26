@@ -15,21 +15,25 @@ script:
   - coverage run --rcfile=.coveragerc manage.py test
   - coverage report --rcfile=.coveragerc -m
 
+  # Deploy only from the main branch, never from pull requests.
+  - |
+    if [[ "$TRAVIS_BRANCH" == "main" && "$TRAVIS_PULL_REQUEST" == "false" ]]; then
+      echo "Starting AWS Elastic Beanstalk deployment..."
+
+      test -n "$AWS_ACCESS_KEY_ID"
+      test -n "$AWS_SECRET_ACCESS_KEY"
+
+      pip install awscli
+
+      export AWS_DEFAULT_REGION=us-east-1
+      export EB_VERSION_LABEL="travis-${TRAVIS_COMMIT}-${TRAVIS_BUILD_ID}"
+
+      git archive --format=zip --output=/tmp/swe1-app.zip HEAD
+
+      bash scripts/deploy-eb.sh
+    else
+      echo "Skipping AWS deployment for non-main or pull request build."
+    fi
+
 after_success:
   - coveralls
-
-before_deploy:
-  - test -n "$AWS_ACCESS_KEY_ID"
-  - test -n "$AWS_SECRET_ACCESS_KEY"
-  - pip install awscli
-  - export AWS_DEFAULT_REGION=us-east-1
-  - export EB_VERSION_LABEL="travis-${TRAVIS_COMMIT}-${TRAVIS_BUILD_ID}"
-  - git archive --format=zip --output=/tmp/swe1-app.zip HEAD
-
-deploy:
-  provider: script
-  script: bash scripts/deploy-eb.sh 2>&1 | tee /tmp/eb-deploy.log; exit ${PIPESTATUS[0]}
-  skip_cleanup: true
-  on:
-    repo: MuskanKS/swe1-app
-    branch: main
