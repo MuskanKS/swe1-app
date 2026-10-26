@@ -9,11 +9,11 @@ install:
   - pip install -r requirements.txt
 
 script:
-  - python manage.py check
-  - black --check .
-  - flake8 .
-  - coverage run --rcfile=.coveragerc manage.py test
-  - coverage report --rcfile=.coveragerc -m
+  - python manage.py check || exit 1
+  - black --check . || exit 1
+  - flake8 . || exit 1
+  - coverage run --rcfile=.coveragerc manage.py test || exit 1
+  - coverage report --rcfile=.coveragerc -m || exit 1
 
   # Deploy only from the main branch, never from pull requests.
   - |
