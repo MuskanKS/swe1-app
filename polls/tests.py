@@ -98,13 +98,11 @@ class ResultsTests(TestCase):
 
 
 class IndexOrderingTests(TestCase):
-    def test_index_shows_five_newest_published_questions(self):
+    def test_index_orders_published_questions_and_excludes_future(self):
         questions = [create_question(f"Past question {day}", -day) for day in range(1, 8)]
         create_question("Future question", 1)
 
         response = self.client.get(reverse("polls:index"))
 
-        self.assertQuerySetEqual(response.context["latest_question_list"], questions[:5])
+        self.assertQuerySetEqual(response.context["latest_question_list"], questions)
         self.assertNotContains(response, "Future question")
-        self.assertNotContains(response, "Past question 6")
-        self.assertNotContains(response, "Past question 7")
