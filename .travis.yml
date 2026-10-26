@@ -3,7 +3,7 @@ language: python
 dist: jammy
 
 python:
-  - "3.11"
+  - "3.12"
 
 install:
   - pip install -r requirements.txt
@@ -18,8 +18,24 @@ script:
 after_success:
   - coveralls
 
-branches:
-  only:
-    - main
-    - assignment-6-travis-ci
-    - assignment-6-aws-deployment
+before_deploy:
+  - test -n "$AWS_ACCESS_KEY_ID"
+  - test -n "$AWS_SECRET_ACCESS_KEY"
+  - git archive --format=zip --output=/tmp/swe1-app.zip HEAD
+
+deploy:
+  provider: elasticbeanstalk
+  edge: true
+  access_key_id: "$AWS_ACCESS_KEY_ID"
+  secret_access_key: "$AWS_SECRET_ACCESS_KEY"
+  region: us-east-1
+  app: swe1-app
+  env: swe1-env
+  bucket: elasticbeanstalk-us-east-1-520519513900
+  bucket_path: travis-builds
+  zip_file: /tmp/swe1-app.zip
+  wait_until_deployed: true
+  wait_until_deployed_timeout: 900
+  on:
+    repo: MuskanKS/swe1-app
+    branch: main
