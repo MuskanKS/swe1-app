@@ -9,14 +9,20 @@ set -euo pipefail
 export AWS_DEFAULT_REGION=us-east-1
 export AWS_PAGER=""
 
+# AWS Elastic Beanstalk configuration
 APP_NAME="swe1-app"
 ENV_NAME="swe1-env"
 BUCKET="elasticbeanstalk-us-east-1-520519513900"
+
 S3_KEY="travis-builds/${EB_VERSION_LABEL}.zip"
 ZIP_FILE="/tmp/swe1-app.zip"
+
 URL="http://swe1-env.eba-btdh4sap.us-east-1.elasticbeanstalk.com"
 
-# Display recent Elastic Beanstalk errors when deployment fails.
+# --------------------------------------------------
+# Helper: Display recent Elastic Beanstalk errors
+# --------------------------------------------------
+
 show_eb_errors() {
   echo ""
   echo "========== Recent Elastic Beanstalk Errors =========="
@@ -32,6 +38,10 @@ show_eb_errors() {
   echo "====================================================="
 }
 
+# --------------------------------------------------
+# Step 1: Validate application bundle
+# --------------------------------------------------
+
 echo "Checking application bundle..."
 
 if [[ ! -f "$ZIP_FILE" ]]; then
@@ -39,79 +49,52 @@ if [[ ! -f "$ZIP_FILE" ]]; then
   exit 1
 fi
 
-# Step 1: Upload application bundle
+echo "Application bundle found."
+
+# --------------------------------------------------
+# Step 2: Upload ZIP to Amazon S3
+# --------------------------------------------------
+
 echo "Uploading application bundle..."
 
 aws s3 cp \
   "$ZIP_FILE" \
   "s3://${BUCKET}/${S3_KEY}"
 
-# Step 2: Create Elastic Beanstalk application version
+echo "Application bundle uploaded successfully."
+
+# --------------------------------------------------
+# Step 3: Create Elastic Beanstalk application version
+# --------------------------------------------------
+
 echo "Creating Elastic Beanstalk application version..."
+
+# Do not use --process.
+# Elastic Beanstalk can deploy an UNPROCESSED version directly.
 
 aws elasticbeanstalk create-application-version \
   --application-name "$APP_NAME" \
   --version-label "$EB_VERSION_LABEL" \
-  --source-bundle S3Bucket="$BUCKET",S3Key="$S3_KEY" \
-  --process
+  --source-bundle S3Bucket="$BUCKET",S3Key="$S3_KEY"
 
-# Step 3: Wait for AWS to finish processing the version
-echo "Waiting for application version processing..."
+echo "Application version created successfully."
 
-processed=false
+# --------------------------------------------------
+# Step 4: Deploy application version
+# --------------------------------------------------
 
-for attempt in $(seq 1 60); do
-
-  version_status=$(aws elasticbeanstalk describe-application-versions \
-    --application-name "$APP_NAME" \
-    --version-labels "$EB_VERSION_LABEL" \
-    --query 'ApplicationVersions[0].Status' \
-    --output text)
-
-  echo "Attempt $attempt/60: Version status = $version_status"
-
-  case "${version_status^^}" in
-
-    PROCESSED)
-      echo "Application version processed successfully."
-      processed=true
-      break
-      ;;
-
-    FAILED)
-      echo "ERROR: AWS failed to process application version." >&2
-      show_eb_errors
-      exit 1
-      ;;
-
-    PROCESSING|UNPROCESSED|NONE)
-      sleep 10
-      ;;
-
-    *)
-      echo "ERROR: Unexpected application version status: $version_status" >&2
-      show_eb_errors
-      exit 1
-      ;;
-
-  esac
-
-done
-
-if [[ "$processed" != "true" ]]; then
-  echo "ERROR: Application version processing timed out." >&2
-  show_eb_errors
-  exit 1
-fi
-
-# Step 4: Deploy the processed version
 echo "Deploying application version: $EB_VERSION_LABEL"
 
 aws elasticbeanstalk update-environment \
   --environment-name "$ENV_NAME" \
   --version-label "$EB_VERSION_LABEL"
 
-# Step 5: Wait for environment to become healthy
+echo "Deployment request submitted."
+
+# --------------------------------------------------
+# Step 5: Wait for deployment to finish
+# --------------------------------------------------
+
 echo "Waiting for Elastic Beanstalk deployment..."
 
 deployed_successfully=false
@@ -131,6 +114,8 @@ for attempt in $(seq 1 90); do
         "$deployed" == "$EB_VERSION_LABEL" && \
         "$health" == "Green" ]]; then
 
+    echo "Elastic Beanstalk deployment completed successfully."
+
     deployed_successfully=true
     break
   fi
@@ -145,20 +130,44 @@ if [[ "$deployed_successfully" != "true" ]]; then
   exit 1
 fi
 
-# Step 6: Smoke tests
+# --------------------------------------------------
+# Step 6: Smoke test application
+# --------------------------------------------------
+
 echo "Running application smoke tests..."
 
-curl --fail --silent --show-error --retry 3 \
+echo "Checking Django polls page..."
+
+curl \
+  --fail \
+  --silent \
+  --show-error \
+  --retry 3 \
   "$URL/polls/" \
   --output /dev/null
 
-curl --fail --silent --show-error --retry 3 \
+echo "Django polls page passed."
+
+echo "Checking static CSS..."
+
+curl \
+  --fail \
+  --silent \
+  --show-error \
+  --retry 3 \
   "$URL/static/polls/style.css" \
   --output /dev/null
+
+echo "Static CSS passed."
+
+# --------------------------------------------------
+# Step 7: Deployment success
+# --------------------------------------------------
 
 echo ""
 echo "=========================================="
 echo "DEPLOYMENT SUCCESSFUL"
+echo "=========================================="
 echo "Application: $APP_NAME"
 echo "Environment: $ENV_NAME"
 echo "Version: $EB_VERSION_LABEL"
