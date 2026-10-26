@@ -28,7 +28,7 @@ before_deploy:
 
 deploy:
   provider: script
-  script: bash scripts/deploy-eb.sh
+  script: bash scripts/deploy-eb.sh 2>&1 | tee /tmp/eb-deploy.log; exit ${PIPESTATUS[0]}
   skip_cleanup: true
   on:
     repo: MuskanKS/swe1-app
