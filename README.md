@@ -1,52 +1,36 @@
 # SWE1 Django Application
 
-[![Build Status](https://app.travis-ci.com/MuskanKS/swe1-app.svg?branch=main)](https://app.travis-ci.com/github/MuskanKS/swe1-app)
+A Django polls application for Software Engineering I.
 
-[![Coverage Status](https://coveralls.io/repos/github/MuskanKS/swe1-app/badge.svg?branch=main)](https://coveralls.io/github/MuskanKS/swe1-app?branch=main)
+[Live application](http://swe1-env.eba-btdh4sap.us-east-1.elasticbeanstalk.com/polls/)
 
-## About
-
-A Django application developed for Software Engineering I.
-
-## Continuous Integration
-
-This project uses Travis CI to run:
-
-- Django system checks and automated tests
-- Black formatting checks
-- Flake8 linting checks
-- Coverage.py analysis
-- Coveralls coverage reporting
-
-## Running Locally
-
-Install dependencies:
+## Run locally
 
 ```bash
 python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
 ```
 
-Run Django tests:
+## Checks
 
 ```bash
 python manage.py test
-```
-
-Check formatting:
-
-```bash
 black --check .
-```
-
-Run linting:
-
-```bash
 flake8 .
-```
-
-Run coverage:
-
-```bash
 coverage run --rcfile=.coveragerc manage.py test
 coverage report --rcfile=.coveragerc -m
 ```
+
+Travis CI runs the checks and reports coverage to Coveralls.
+
+## Deployment
+
+AWS Elastic Beanstalk: `swe1-env`, `us-east-1`, Python 3.12.
+
+Include `.ebextensions` and `.platform` in the deployment package.
+Set `DJANGO_SETTINGS_MODULE=mysite.production_settings` and
+`DJANGO_SECRET_KEY` in AWS. Keep credentials out of Git.
+
+The SQLite database survives application redeployments on the same instance,
+but not instance replacement.

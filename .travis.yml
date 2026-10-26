@@ -22,3 +22,4 @@ branches:
   only:
     - main
     - assignment-6-travis-ci
+    - assignment-6-aws-deployment
