@@ -39,16 +39,12 @@ class QuestionIndexTests(TestCase):
     def test_future_question_is_not_displayed(self):
         create_question("Future question", 30)
         response = self.client.get(reverse("polls:index"))
-        self.assertQuerySetEqual(
-            response.context["latest_question_list"], []
-        )
+        self.assertQuerySetEqual(response.context["latest_question_list"], [])
 
     def test_past_question_is_displayed(self):
         question = create_question("Past question", -5)
         response = self.client.get(reverse("polls:index"))
-        self.assertQuerySetEqual(
-            response.context["latest_question_list"], [question]
-        )
+        self.assertQuerySetEqual(response.context["latest_question_list"], [question])
 
 
 class VotingTests(TestCase):
@@ -76,3 +72,26 @@ class VotingTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "You didn&#x27;t select a choice.")
+
+
+class ResultsTests(TestCase):
+    def setUp(self):
+        self.question = create_question("Test poll", -1)
+
+    def test_results_with_no_votes_show_zero_total(self):
+        Choice.objects.create(question=self.question, choice_text="One", votes=0)
+        response = self.client.get(reverse("polls:results", args=(self.question.id,)))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_votes"], 0)
+        self.assertContains(response, "Total votes: 0")
+
+    def test_results_total_includes_all_choices(self):
+        Choice.objects.create(question=self.question, choice_text="One", votes=2)
+        Choice.objects.create(question=self.question, choice_text="Two", votes=3)
+        response = self.client.get(reverse("polls:results", args=(self.question.id,)))
+        self.assertEqual(response.context["total_votes"], 5)
+        self.assertContains(response, "Total votes: 5")
+
+    def test_missing_question_returns_404(self):
+        response = self.client.get(reverse("polls:results", args=(999999,)))
+        self.assertEqual(response.status_code, 404)
